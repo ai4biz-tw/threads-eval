@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Compute eval metrics: judge predictions vs ground truth.
 
+Usage: python3 metrics.py dev|holdout [predictions.json]
 Input: predictions.json — list of {media_id, score (0-100), tier (S/A/B/C)}
 Compares against eval_dataset.json dev_key (or holdout_key).
 """
 import json, sys
+from pathlib import Path
 from math import sqrt
 
 def spearman(xs, ys):
@@ -24,10 +26,12 @@ def spearman(xs, ys):
     den = sqrt(sum((a-mx)**2 for a in rx)*sum((b-my)**2 for b in ry))
     return num/den if den else 0.0
 
+ROOT = Path(__file__).resolve().parent
 which = sys.argv[1] if len(sys.argv)>1 else "dev"
-ds = json.load(open("/home/hatch/workspace/threads-eval/eval_dataset.json"))
+pred_path = Path(sys.argv[2]) if len(sys.argv)>2 else ROOT / "predictions.json"
+ds = json.load(open(ROOT / "eval_dataset.json", encoding="utf-8"))
 key = ds[f"{which}_key"]
-preds = {p["media_id"]: p for p in json.load(open("/home/hatch/workspace/threads-eval/predictions.json"))}
+preds = {p["media_id"]: p for p in json.load(open(pred_path, encoding="utf-8"))}
 
 rows = []
 for mid, p in preds.items():

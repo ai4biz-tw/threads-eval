@@ -1,0 +1,396 @@
+[
+ {
+  "media_id": "18351673528172822",
+  "score": 65,
+  "tier": "B",
+  "dims": {
+   "identity": 3.9,
+   "hook": 25.0,
+   "angle": 6.1,
+   "substance": 10.0,
+   "save_value": 8.4,
+   "audience": 6.4,
+   "reply": 1.7,
+   "format": 3.5
+  },
+  "angle": "普通",
+  "bait": 0.31,
+  "format_issues": [
+   "hashtag 3 個（Threads 一篇只用 1 個 topic tag）"
+  ],
+  "low_confidence": false,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "18575795155042180",
+  "score": 63,
+  "tier": "B",
+  "dims": {
+   "identity": 19.6,
+   "hook": 12.0,
+   "angle": 7.0,
+   "substance": 2.4,
+   "save_value": 2.6,
+   "audience": 9.9,
+   "reply": 4.8,
+   "format": 5.0
+  },
+  "angle": "普通",
+  "bait": 0.38,
+  "format_issues": [],
+  "low_confidence": false,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "18099072521136292",
+  "score": 46,
+  "tier": "C",
+  "dims": {
+   "identity": 2.1,
+   "hook": 18.2,
+   "angle": 2.9,
+   "substance": 2.4,
+   "save_value": 8.6,
+   "audience": 7.1,
+   "reply": 1.0,
+   "format": 3.5
+  },
+  "angle": "搬運",
+  "bait": 0.47,
+  "format_issues": [
+   "hashtag 2 個（Threads 一篇只用 1 個 topic tag）"
+  ],
+  "low_confidence": false,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "17989213499829526",
+  "score": 39,
+  "tier": "C",
+  "dims": {
+   "identity": 3.1,
+   "hook": 25.0,
+   "angle": 3.1,
+   "substance": 0.0,
+   "save_value": 0.1,
+   "audience": 1.3,
+   "reply": 1.1,
+   "format": 5.0
+  },
+  "angle": "搬運",
+  "bait": 0.35,
+  "format_issues": [],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "18164445469468200",
+  "score": 59,
+  "tier": "B",
+  "dims": {
+   "identity": 2.5,
+   "hook": 25.0,
+   "angle": 7.7,
+   "substance": 9.8,
+   "save_value": 3.0,
+   "audience": 5.4,
+   "reply": 2.1,
+   "format": 3.5
+  },
+  "angle": "普通",
+  "bait": 0.29,
+  "format_issues": [
+   "hashtag 5 個（Threads 一篇只用 1 個 topic tag）"
+  ],
+  "low_confidence": false,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "17991834387001536",
+  "score": 65,
+  "tier": "B",
+  "dims": {
+   "identity": 6.2,
+   "hook": 25.0,
+   "angle": 5.9,
+   "substance": 9.8,
+   "save_value": 4.2,
+   "audience": 6.0,
+   "reply": 4.6,
+   "format": 3.5
+  },
+  "angle": "普通",
+  "bait": 0.34,
+  "format_issues": [
+   "hashtag 5 個（Threads 一篇只用 1 個 topic tag）"
+  ],
+  "low_confidence": false,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "17869531113672286",
+  "score": 33,
+  "tier": "C",
+  "dims": {
+   "identity": 10.7,
+   "hook": 6.6,
+   "angle": 5.5,
+   "substance": 0.1,
+   "save_value": 0.6,
+   "audience": 2.8,
+   "reply": 2.0,
+   "format": 5.0
+  },
+  "angle": "普通",
+  "bait": 0.38,
+  "format_issues": [],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "18035945798652849",
+  "score": 13,
+  "tier": "C",
+  "dims": {
+   "identity": 2.3,
+   "hook": 2.5,
+   "angle": 1.6,
+   "substance": 0.2,
+   "save_value": 0.2,
+   "audience": 1.0,
+   "reply": 0,
+   "format": 5.0
+  },
+  "angle": "搬運",
+  "bait": 0.55,
+  "format_issues": [],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "17889118617506966",
+  "score": 43,
+  "tier": "C",
+  "dims": {
+   "identity": 5.5,
+   "hook": 20.5,
+   "angle": 5.2,
+   "substance": 0.0,
+   "save_value": 0.2,
+   "audience": 5.0,
+   "reply": 2.0,
+   "format": 5.0
+  },
+  "angle": "普通",
+  "bait": 0.4,
+  "format_issues": [],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "18115370384491496",
+  "score": 45,
+  "tier": "C",
+  "dims": {
+   "identity": 10.0,
+   "hook": 15.4,
+   "angle": 6.9,
+   "substance": 0.1,
+   "save_value": 0.4,
+   "audience": 1.9,
+   "reply": 5.0,
+   "format": 5.0
+  },
+  "angle": "普通",
+  "bait": 0.3,
+  "format_issues": [],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "17957426370024378",
+  "score": 58,
+  "tier": "B",
+  "dims": {
+   "identity": 15.8,
+   "hook": 19.3,
+   "angle": 5.1,
+   "substance": 0.4,
+   "save_value": 0.3,
+   "audience": 8.5,
+   "reply": 3.4,
+   "format": 5.0
+  },
+  "angle": "普通",
+  "bait": 0.24,
+  "format_issues": [],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "18087665300222737",
+  "score": 56,
+  "tier": "B",
+  "dims": {
+   "identity": 13.2,
+   "hook": 17.8,
+   "angle": 7.2,
+   "substance": 1.9,
+   "save_value": 5.5,
+   "audience": 5.7,
+   "reply": 2.1,
+   "format": 3.0
+  },
+  "angle": "普通",
+  "bait": 0.31,
+  "format_issues": [
+   "主文有外部連結（演算法降權，改放第一則留言）"
+  ],
+  "low_confidence": false,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "18303063286304379",
+  "score": 43,
+  "tier": "C",
+  "dims": {
+   "identity": 2.0,
+   "hook": 13.2,
+   "angle": 3.3,
+   "substance": 5.8,
+   "save_value": 9.1,
+   "audience": 4.4,
+   "reply": 0.7,
+   "format": 5.0
+  },
+  "angle": "普通",
+  "bait": 0.37,
+  "format_issues": [],
+  "low_confidence": false,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "18367889788238566",
+  "score": 65,
+  "tier": "B",
+  "dims": {
+   "identity": 18.8,
+   "hook": 24.9,
+   "angle": 4.9,
+   "substance": 0.1,
+   "save_value": 0.5,
+   "audience": 7.8,
+   "reply": 3.2,
+   "format": 5.0
+  },
+  "angle": "普通",
+  "bait": 0.33,
+  "format_issues": [],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "17873802696528850",
+  "score": 61,
+  "tier": "B",
+  "dims": {
+   "identity": 3.8,
+   "hook": 22.7,
+   "angle": 5.1,
+   "substance": 5.3,
+   "save_value": 9.9,
+   "audience": 9.1,
+   "reply": 1.4,
+   "format": 3.5
+  },
+  "angle": "普通",
+  "bait": 0.43,
+  "format_issues": [
+   "hashtag 4 個（Threads 一篇只用 1 個 topic tag）"
+  ],
+  "low_confidence": false,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "17959120956129112",
+  "score": 56,
+  "tier": "B",
+  "dims": {
+   "identity": 2.8,
+   "hook": 24.4,
+   "angle": 5.7,
+   "substance": 3.2,
+   "save_value": 8.3,
+   "audience": 6.6,
+   "reply": 1.7,
+   "format": 3.5
+  },
+  "angle": "普通",
+  "bait": 0.48,
+  "format_issues": [
+   "hashtag 2 個（Threads 一篇只用 1 個 topic tag）"
+  ],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "18104455193184354",
+  "score": 52,
+  "tier": "B",
+  "dims": {
+   "identity": 10.7,
+   "hook": 15.2,
+   "angle": 4.3,
+   "substance": 0.1,
+   "save_value": 2.0,
+   "audience": 9.3,
+   "reply": 4.9,
+   "format": 5.0
+  },
+  "angle": "普通",
+  "bait": 0.42,
+  "format_issues": [],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "17952865413219504",
+  "score": 36,
+  "tier": "C",
+  "dims": {
+   "identity": 8.8,
+   "hook": 10.1,
+   "angle": 3.8,
+   "substance": 0.0,
+   "save_value": 0.2,
+   "audience": 5.6,
+   "reply": 2.0,
+   "format": 5.0
+  },
+  "angle": "普通",
+  "bait": 0.25,
+  "format_issues": [],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ },
+ {
+  "media_id": "17953815408198811",
+  "score": 51,
+  "tier": "B",
+  "dims": {
+   "identity": 13.9,
+   "hook": 21.3,
+   "angle": 5.2,
+   "substance": 0.0,
+   "save_value": 0.2,
+   "audience": 2.6,
+   "reply": 3.2,
+   "format": 5.0
+  },
+  "angle": "普通",
+  "bait": 0.38,
+  "format_issues": [],
+  "low_confidence": true,
+  "rubric": "threads-judge-v4"
+ }
+]
