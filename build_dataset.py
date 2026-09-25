@@ -6,10 +6,13 @@ Split: 70% dev (tune the rubric), 30% holdout (final validation, do not peek).
 Output: eval_dataset.json with blind items (caption only) + labels kept separate.
 """
 import json, random
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
 
 random.seed(42)
 
-rows = json.load(open("/home/hatch/workspace/threads-eval/insights.json"))
+rows = json.load(open(ROOT / "insights.json", encoding="utf-8"))
 # drop posts with too few views to be meaningful (< 200 views: not enough distribution to judge)
 rows = [r for r in rows if (r.get("views") or 0) >= 200]
 print(f"posts with >=200 views: {len(rows)}")
@@ -49,5 +52,5 @@ out = {
     "dev_blind": blind(dev), "dev_key": keyed(dev),
     "holdout_blind": blind(holdout), "holdout_key": keyed(holdout),
 }
-json.dump(out, open("/home/hatch/workspace/threads-eval/eval_dataset.json","w"), ensure_ascii=False)
+json.dump(out, open(ROOT / "eval_dataset.json", "w", encoding="utf-8"), ensure_ascii=False)
 print(f"dev={len(dev)} holdout={len(holdout)} -> eval_dataset.json")

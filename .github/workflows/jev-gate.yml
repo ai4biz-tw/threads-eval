@@ -1,0 +1,107 @@
+# Jev 內容閘門（ai4biz-tw board R10）——可重用 workflow，內容 repo 用 `uses:` 呼叫：
+#
+#   jev-gate:
+#     uses: ai4biz-tw/threads-eval/.github/workflows/jev-gate.yml@main
+#     with:
+#       content_globs: "**/captions.md"
+#     secrets: inherit
+#
+# 需要 org secret：TYPESAFE_API_KEY、JEV_LEDGER_URL、JEV_LEDGER_SECRET（缺任何一個就失敗，不准略過）。
+# PR 有 `jev-override` 標籤、且是 override_users 裡的人貼的 → 照樣評分與記帳，但不擋。
+name: Jev content gate
+
+on:
+  workflow_call:
+    inputs:
+      content_globs:
+        description: 要評的檔案 glob，逗號分隔
+        type: string
+        default: "**/captions.md"
+      block_on:
+        description: redline（預設，只擋紅線）｜drop｜hold（只有 GO 才過）
+        type: string
+        default: redline
+      override_users:
+        description: 可以用 jev-override 標籤放行的 GitHub 帳號，逗號分隔
+        type: string
+        default: danieltsaicw
+      gate_ref:
+        description: threads-eval 的版本（branch／tag／sha）
+        type: string
+        default: main
+
+jobs:
+  jev-gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: ai4biz-tw/threads-eval
+          ref: ${{ inputs.gate_ref }}
+          path: .jev-gate
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check jev-override label
+        id: override
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          USERS: ${{ inputs.override_users }}
+        run: |
+          who=$(gh api "repos/${{ github.repository }}/issues/$PR/events" --paginate \
+            --jq '[.[] | select(.event=="labeled" and .label.name=="jev-override")] | last | .actor.login // ""')
+          has=$(gh api "repos/${{ github.repository }}/issues/$PR/labels" --jq '[.[].name] | index("jev-override") != null')
+          flag=""
+          if [ "$has" = "true" ] && [ -n "$who" ] && echo ",$USERS," | grep -q ",$who,"; then flag="--override"; fi
+          echo "flag=$flag" >> "$GITHUB_OUTPUT"
+          echo "jev-override: has=$has by=$who → ${flag:-none}"
+      - name: Run Jev gate
+        id: gate
+        env:
+          CI: "true"
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          JEV_LEDGER_URL: ${{ secrets.JEV_LEDGER_URL }}
+          JEV_LEDGER_SECRET: ${{ secrets.JEV_LEDGER_SECRET }}
+          JEV_CALLER: CI (${{ github.repository }}#${{ github.event.pull_request.number }} by ${{ github.actor }})
+        run: |
+          set +e
+          python .jev-gate/gate/content_gate.py \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head "${{ github.event.pull_request.head.sha }}" \
+            --globs "${{ inputs.content_globs }}" \
+            --block-on "${{ inputs.block_on }}" \
+            --repo "${{ github.repository }}#${{ github.event.pull_request.number }}" \
+            ${{ steps.override.outputs.flag }}
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          [ -f jev-gate.md ] && cat jev-gate.md >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+      - name: Comment on PR
+        if: always() && hashFiles('jev-gate.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          id=$(gh api "repos/${{ github.repository }}/issues/$PR/comments" --paginate \
+            --jq '[.[] | select(.body | contains("<!-- jev-gate -->"))] | last | .id // ""')
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$id" -F body=@jev-gate.md > /dev/null
+          else
+            gh pr comment "$PR" --repo "${{ github.repository }}" --body-file jev-gate.md
+          fi
+      - name: Keep unsynced ledger rows
+        if: always() && hashFiles('jev-ledger-queue.jsonl') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: jev-ledger-queue
+          path: jev-ledger-queue.jsonl
+      - name: Gate result
+        run: exit ${{ steps.gate.outputs.code || 1 }}

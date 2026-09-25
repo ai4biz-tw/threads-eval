@@ -1,0 +1,169 @@
+"""Jev 內容閘門（ai4biz-tw board R10）：文案／圖卡／影片 PR 在 merge 前必過。
+
+每個「內容單位」跑兩組 Jev 題：
+  1. 發佈判定：紅線（誇大、暗示合作但沒揭露）機率 ≥ 0.7 就擋。GO／HOLD／DROP 與 jev-score＝P(GO)×10 預設只顯示。
+     為什麼預設不擋 HOLD：2026-09-25 拿 ig-cards 36 則已發文案回測，通用題組判 GO 只有 1 則（HOLD 30、DROP 5），
+     連全帳號互動率最高的 taiwan-cases 都是 HOLD——Jev 只看得到 caption，出處在最後一張卡上看不到。
+     硬擋 HOLD 等於擋掉 97% 正常內容。紅線門檻 0.7：回測唯一命中是 eval-ee 0.58（誤判：那是報導別人的合作）。
+     校準好之後用 --block-on drop|hold 收緊。
+  2. 爆文評分 v4（jev/threads_judge.py，參考用）：v4 在 eval 還沒贏過 v3，先只在 PR 留言給分數，不擋 merge。
+內容單位：
+  - 有 fenced code block 的檔（captions.md）：新增或改過的每一個 code block，配它所在的 `## 標題`
+  - 沒有 code block 的 markdown（magazine 的彈匣稿）：整份檔
+Jev 只看得到文字；圖卡畫面、影片畫面不在評分範圍內。
+
+用法（CI）：python3 gate/content_gate.py --base <sha> --head <sha> --globs "**/captions.md" --out jev-gate.md
+  --override 由 workflow 判定（PR 有 Daniel 貼的 jev-override 標籤）時帶入：照樣評分、照樣記帳，但不擋。
+"""
+import argparse, fnmatch, json, re, subprocess, sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "jev"))
+from client import evaluate  # noqa: E402
+import threads_judge  # noqa: E402
+
+GATE_VERSION = "publish-gate-v1"
+Q_PUBLISH = {
+ "overclaim": {"type": "noul",
+   "question": "內容是否有誇大、斷言過頭或無法兌現的承諾？",
+   "instructions": "把廠商宣稱當成事實、保證效果、把推測寫成定論、承諾送出不存在的東西，為真。有保留、有標注限制或出處，為假。"},
+ "undisclosed_partnership": {"type": "noul",
+   "question": "內容是否暗示與某品牌有合作、代言、贊助或官方授權關係，卻沒有揭露？",
+   "instructions": "文字寫出或暗示合作、代言、贊助、聯名，且沒有標示業配／合作時為真。單純報導或評論某產品、或已寫明「非業配」「沒有合作」，為假。"},
+ "unlabeled_numbers": {"type": "noul",
+   "question": "文中的具體數字是否有沒交代來源、也沒標示為示意或廠商宣稱的？",
+   "instructions": "有任何關鍵數字看不出出處、又沒標成示意或廠商示例時為真；都有來源或標示、或沒有關鍵數字時為假。"},
+ "publish_verdict": {"type": "choice",
+   "question": "以 ai4biz 這個面向台灣讀者、講 AI 與商業的社群帳號來看，這則內容能不能發？",
+   "criteria": {"GO": "事實邊界清楚、沒有誤導或合作暗示、結構完整，可以直接發佈",
+                "HOLD": "大致可發，但有需要先修正的具體問題（出處或標示不足、措辭誇大、CTA 不清等）",
+                "DROP": "有根本性問題（事實錯誤、誤導、法律或品牌風險），不應發佈"}},
+}
+RED_LINE_P = 0.7
+RED_LINES = {"overclaim": "誇大或斷言過頭", "undisclosed_partnership": "暗示合作但沒揭露"}
+DIM_TIPS = {"identity": "加一段作者自己的具體經歷，或點名一個具體身份群體",
+            "hook": "開頭 40 字放具體數字反差、反直覺結論或場景",
+            "angle": "講出別人沒講過的切入：冷門資料的台灣角度、自己重算的數字、有證據的反共識",
+            "substance": "內容太短，展開成完整的故事或論點",
+            "save_value": "整理成讀者會想收藏的清單、步驟或對照表",
+            "audience": "寫明這篇是給誰看的（職稱、處境、身份）",
+            "reply": "結尾加一個沒有標準答案的提問"}
+DIM_MAX = {"identity": 20, "hook": 25, "angle": 15, "substance": 10, "save_value": 10, "audience": 10, "reply": 5}
+
+
+def git(*args):
+    return subprocess.run(["git", *args], capture_output=True, text=True).stdout
+
+
+def blocks(text):
+    """回傳 [(heading, block_text)]：fenced code block 與它所在的最近一個 ## 標題。"""
+    out, heading, buf, fence = [], "", None, None
+    for line in text.splitlines():
+        if buf is None:
+            if line.startswith("#"):
+                heading = line.lstrip("#").strip()
+            m = re.match(r"^(```+)", line)
+            if m:
+                buf, fence = [], m.group(1)
+        elif line.startswith(fence):
+            out.append((heading, "\n".join(buf).strip()))
+            buf = None
+        else:
+            buf.append(line)
+    return [b for b in out if b[1]]
+
+
+def units(base, head, globs):
+    changed = [l.split("\t")[-1] for l in git("diff", "--name-status", "--diff-filter=AMR", base, head).splitlines() if l]
+    res = []
+    for path in changed:
+        if not any(fnmatch.fnmatch(path, g) or fnmatch.fnmatch(path, g.replace("**/", "")) for g in globs):
+            continue
+        new, old = git("show", f"{head}:{path}"), git("show", f"{base}:{path}")
+        nb = blocks(new)
+        if nb:
+            seen = {b for _, b in blocks(old)}
+            res += [(path, h or "(無標題)", b) for h, b in nb if b not in seen]
+        elif path.endswith(".md"):
+            body = re.sub(r"^---\n.*?\n---\n", "", new, flags=re.S).strip()
+            if body:
+                res.append((path, Path(path).stem, body))
+    return res
+
+
+def judge(path, heading, text, repo):
+    note = f"{path}#{heading}"[:120]
+    r = evaluate(text, Q_PUBLISH, tag=GATE_VERSION, repo=repo, note=note)["answers"]
+    v = r["publish_verdict"]
+    red = [RED_LINES[k] for k in RED_LINES if r[k]["noul"] >= RED_LINE_P]
+    boom = threads_judge.score(text, repo=repo, note=note)
+    weak = sorted(DIM_MAX, key=lambda d: boom["dims"].get(d, 0) / DIM_MAX[d])[:3]
+    return {"path": path, "heading": heading, "chars": len(text), "verdict": v["choice"],
+            "confidence": v["confidence"], "jev_score": round(v["probabilities"].get("GO", 0) * 10, 1),
+            "red_lines": red, "unlabeled_numbers": r["unlabeled_numbers"]["noul"] > 0.5,
+            "red_p": {k: round(r[k]["noul"], 2) for k in RED_LINES}, "boom": boom,
+            "tips": [DIM_TIPS[d] for d in weak]}
+
+
+def passes(r, block_on):
+    if r["red_lines"]:
+        return False
+    return {"redline": True, "drop": r["verdict"] != "DROP", "hold": r["verdict"] == "GO"}[block_on]
+
+
+def report(results, override, block_on):
+    lines = ["generated by Jev (jev-latest) via ai4biz-tw/threads-eval jev-gate", "", "<!-- jev-gate -->",
+             "## Jev 內容閘門", ""]
+    if not results:
+        return "\n".join(lines + ["這個 PR 沒有動到文案，跳過。"])
+    for r in results:
+        r["pass"] = passes(r, block_on)
+    ok = all(r["pass"] for r in results)
+    rule = {"redline": "只有紅線（誇大、暗示合作沒揭露）會擋；發佈判定與爆文分數供參考",
+            "drop": "紅線或判 DROP 會擋", "hold": "只有判 GO 且無紅線才過"}[block_on]
+    head = "✅ 全部通過" if ok else ("⚠️ 未通過，但 Daniel 已貼 `jev-override` 放行" if override else "❌ 未通過，merge 已擋下")
+    lines += [f"**{head}**（{rule}）", "",
+              "| 內容 | 發佈判定 | jev-score | 紅線 | 爆文 v4（參考） |", "|---|---|---|---|---|"]
+    for r in results:
+        b = r["boom"]
+        boom = f"{b['tier']} {b['score']}" + ("（caption 太短，低信心）" if b["low_confidence"] else "")
+        lines.append(f"| `{r['path']}` {r['heading']} | {'✅' if r['pass'] else '❌'} {r['verdict']}（信心 {r['confidence']:.2f}） "
+                     f"| {r['jev_score']:.1f} | {'、'.join(r['red_lines']) or '—'} | {boom} |")
+    lines.append("")
+    for r in results:
+        notes = []
+        if r["red_lines"]:
+            notes.append(f"紅線：{'、'.join(r['red_lines'])}（{r['red_p']}）")
+        if r["verdict"] != "GO":
+            notes.append(f"發佈判定 {r['verdict']}（jev-score {r['jev_score']:.1f}，Jev 看不到卡面與出處頁，僅供參考）")
+        if r["unlabeled_numbers"]:
+            notes.append("有關鍵數字沒交代出處、也沒標示意或廠商宣稱")
+        notes += r["boom"]["format_issues"]
+        notes += [f"爆文加分方向：{t}" for t in r["tips"]]
+        lines += [f"**{r['heading']}**", *[f"- {n}" for n in notes], ""]
+    lines.append("規則：ai4biz-tw board `governance/issue-harness.md` R10。每次呼叫都記進 Jev Ledger。")
+    return "\n".join(lines)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--base", required=True)
+    ap.add_argument("--head", required=True)
+    ap.add_argument("--globs", default="**/captions.md")
+    ap.add_argument("--repo", default="")
+    ap.add_argument("--out", default="jev-gate.md")
+    ap.add_argument("--json", default="jev-gate.json")
+    ap.add_argument("--override", action="store_true")
+    ap.add_argument("--block-on", choices=["redline", "drop", "hold"], default="redline")
+    a = ap.parse_args()
+    globs = [g.strip() for g in a.globs.split(",") if g.strip()]
+    results = [judge(p, h, t, a.repo or "ci") for p, h, t in units(a.base, a.head, globs)]
+    Path(a.out).write_text(report(results, a.override, a.block_on), encoding="utf-8")
+    Path(a.json).write_text(json.dumps(results, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(Path(a.out).read_text(encoding="utf-8"))
+    sys.exit(0 if a.override or all(r["pass"] for r in results) else 1)
+
+
+if __name__ == "__main__":
+    main()

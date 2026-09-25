@@ -38,6 +38,12 @@ Threads 爆文評分器（`threads-post-judge`）的評測資料集、評分腳�
 - Holdout n=19 太小（只有 2 篇真爆文），數字本身噪音大；但它成功暴露了真缺口，
   這正是保留集的價值。**沒有拿 holdout 回頭調參**，保持驗證乾淨。
 
+## v4（Jev 題組版，2026-09-25）
+
+dev：召回 30%／誤報 57%／spearman 0.50（輸 v3）；holdout spearman 0.16（v3 0.07）。
+新維度「收藏價值」抓到了證照 carousel（8.6/10），但加總式計分把它壓成 C → v5 改「取最強路線」計分。
+詳見 `EVAL_REPORT.md` 的 v4 章節。
+
 ## 他的爆文公式（eval 證實）
 
 1. 具體個人記憶 + 身份群體共鳴（台灣人/留學生/校友）→ 讚+轉發驅動
@@ -51,9 +57,12 @@ Threads 爆文評分器（`threads-post-judge`）的評測資料集、評分腳�
 - `eval_dataset.json`：dev/holdout 切分 + 爆文標籤
 - `all_posts.json` / `insights.json`：原始貼文與 insights（69 篇）
 - `build_dataset.py`：dataset 建構腳本
-- `metrics.py`：評分指標（`python3 metrics.py dev|holdout`）
+- `metrics.py`：評分指標（`python3 metrics.py dev|holdout [predictions.json]`）
 - `predictions_v1.json` / `predictions_v2.json` / `predictions_v3.json`：各版在 dev 上的預測
 - `pred_holdout.json`：v3 在 holdout 上的預測
 - `judge/SKILL.md`：v3 凍結版 rubric（線上生效中）
+- `jev/threads_judge.py`：v4 Jev 題組版（CI 閘門的爆文參考分數），`jev/client.py` 是 Jev 呼叫入口（每次都記帳）
+- `predictions_v4_dev.json` / `predictions_v4_holdout.json`：v4 預測；`jev/cache_v4.jsonl`：Jev 回應快取
+- `gate/content_gate.py` ＋ `.github/workflows/jev-gate.yml`：內容 PR 的 Jev 閘門（可重用 workflow，board R10）
 
 註：中間產物（batch_*.json、pred 分片檔）已省略，可由腳本重跑。
