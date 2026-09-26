@@ -7,6 +7,7 @@
 #     secrets: inherit
 #
 # 需要 org secret：TYPESAFE_API_KEY、JEV_LEDGER_URL、JEV_LEDGER_SECRET（缺任何一個就失敗，不准略過）。
+# 也支援 push 事件（例：magazine 直接推 main）：無法事前擋，但會紅燈，結果寫在 Actions summary。
 # PR 有 `jev-override` 標籤、且是 override_users 裡的人貼的 → 照樣評分與記帳，但不擋。
 name: Jev content gate
 
@@ -51,6 +52,7 @@ jobs:
           python-version: '3.12'
       - name: Check jev-override label
         id: override
+        if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
@@ -70,22 +72,22 @@ jobs:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           JEV_LEDGER_URL: ${{ secrets.JEV_LEDGER_URL }}
           JEV_LEDGER_SECRET: ${{ secrets.JEV_LEDGER_SECRET }}
-          JEV_CALLER: CI (${{ github.repository }}#${{ github.event.pull_request.number }} by ${{ github.actor }})
+          JEV_CALLER: CI (${{ github.repository }} ${{ github.event_name }} by ${{ github.actor }})
         run: |
           set +e
           python .jev-gate/gate/content_gate.py \
-            --base "${{ github.event.pull_request.base.sha }}" \
-            --head "${{ github.event.pull_request.head.sha }}" \
+            --base "${{ github.event.pull_request.base.sha || github.event.before }}" \
+            --head "${{ github.event.pull_request.head.sha || github.sha }}" \
             --globs "${{ inputs.content_globs }}" \
             --block-on "${{ inputs.block_on }}" \
-            --repo "${{ github.repository }}#${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}${{ github.event.pull_request.number && format('#{0}', github.event.pull_request.number) || format('@{0}', github.sha) }}" \
             ${{ steps.override.outputs.flag }}
           code=$?
           echo "code=$code" >> "$GITHUB_OUTPUT"
           [ -f jev-gate.md ] && cat jev-gate.md >> "$GITHUB_STEP_SUMMARY"
           exit 0
       - name: Comment on PR
-        if: always() && hashFiles('jev-gate.md') != ''
+        if: always() && github.event_name == 'pull_request' && hashFiles('jev-gate.md') != ''
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
